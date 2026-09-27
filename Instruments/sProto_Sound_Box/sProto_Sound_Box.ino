@@ -6,7 +6,10 @@
 //   Pad 2 / Dial 2: Kalimba trigger / pitch
 //   Pad 3 / Dial 3: Spring trigger / repeated strikes
 //   Pad 4: Glockenspiel trigger
-//   Hold the sProto button to shift the dials from bank 0 to bank 1.
+//   Hold the sProto button to shift the dials from bank 0 to bank 1 for effects.
+//   Dial 1: Delay Time
+//   Dial 2: Delay Level
+//   Dial 3: Reverb Level
 //
 // Arduino IDE settings:
 //   Board: ESP32-S3 Dev Module
