@@ -1,4 +1,4 @@
-// sProto Spring - a monophonic sine wave with potentiometer controls for pitch, release, and volume
+// sProto Spring - a monophonic percussive exciter with multiple interacting delay lines
 // For Arduino IDE:
 // - Select "ESP32-S3 Dev Module" as the board
 // - Select the appropriate Port
