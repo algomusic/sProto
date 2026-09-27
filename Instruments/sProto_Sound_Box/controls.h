@@ -92,6 +92,7 @@ void readTouchControls() {
       if (i == 1) triggerKalimba();
       if (i == 2) triggerSpring();
       if (i == 3) triggerGlockenspiel();
+      Serial.println(i);
     }
 
     if (!touched && previousPadState[i] && !isMidiInstrumentHeld(i)) {
