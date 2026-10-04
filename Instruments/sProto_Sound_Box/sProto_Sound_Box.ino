@@ -2,7 +2,7 @@
 // Andrew R. Brown 2026
 //
 // Four independent instruments on one sProto board:
-//   Pad 1 / Dial 1: Slide Whistle trigger / pitch
+//   Pad 1 / Dial 1: whistle Whistle trigger / pitch
 //   Pad 2 / Dial 2: Kalimba trigger / pitch
 //   Pad 3 / Dial 3: Spring trigger / repeated strikes
 //   Pad 4: Glockenspiel trigger
@@ -41,7 +41,7 @@ const float defaultBbdDelayMs = 200.0f;
 
 unsigned long controlTime = 0;
 unsigned long midiTime = 0;
-unsigned long slidePitchTime = 0;
+unsigned long whistlePitchTime = 0;
 unsigned long diagnosticTime = 0;
 // scale
 const int pentatonic[] = {0, 2, 4, 7, 9};
@@ -75,64 +75,63 @@ float quantizeToCMajor(float pitch) {
 }
 
 // -------------------------------------------------------------------------
-// Slide Whistle
+// Tin Whistle
 
-Osc slideOsc;
-Osc slideNoise;
-Osc slideVibratoLfo;
-Env slideToneEnv;
-Env slideNoiseEnv;
-SVF2 slideLowPass;
-SVF2 slideHighPass;
-SVF2 slideNoiseBandPass;
+Osc whistleOsc;
+Osc whistleNoise;
+Osc whistleVibratoLfo;
+Env whistleToneEnv;
+Env whistleNoiseEnv;
+SVF2 whistleLowPass;
+SVF2 whistleHighPass;
+SVF2 whistleNoiseBandPass;
 FX effects;
 
-float slidePitch = 72.0f;
-float slideTargetPitch = 72.0f;
-float slideToneCutoff = 900.0f;
-const float slideVibratoRate = 5.0f;  // Hz
-const float slideVibratoIndex = 0.05f; // musical depth in semitones
-float slideVibratoPhaseIndex = 0.0f;  // cached phMod depth in phase cycles
+float whistlePitch = 72.0f;
+float whistleTargetPitch = 72.0f;
+float whistleToneCutoff = 900.0f;
+const float whistleVibratoRate = 5.0f;  // Hz
+const float whistleVibratoIndex = 0.05f; // musical depth in semitones
+float whistleVibratoPhaseIndex = 0.0f;  // cached phMod depth in phase cycles
 
-void adjustSlideFilters() {
+void adjustwhistleFilters() {
   float cutoffRatio = 1.0f;
-  if (slideOsc.getPitch() > 60.0f) {
-    cutoffRatio = slideOsc.getFreq() / 261.0f * 0.75f;
+  if (whistleOsc.getPitch() > 60.0f) {
+    cutoffRatio = whistleOsc.getFreq() / 261.0f * 0.75f;
   }
-  slideLowPass.setFreq(slideToneCutoff * cutoffRatio);
-  slideNoiseBandPass.setFreq(slideOsc.getFreq());
+  whistleLowPass.setFreq(whistleToneCutoff * cutoffRatio);
+  whistleNoiseBandPass.setFreq(whistleOsc.getFreq());
 }
 
-void setSlidePlayingPitch(float pitch) {
-  slideOsc.setPitch(pitch);
+void setwhistlePlayingPitch(float pitch) {
+  whistleOsc.setPitch(pitch);
   // phMod depth is phase excursion, so the audible frequency deviation is
   // 2*pi*LFO-rate*phase-index. Convert the requested semitone interval into
   // the phase index required at the current carrier frequency.
-  float frequencyDeviation = slideOsc.getFreq() *
-      (powf(2.0f, slideVibratoIndex / 12.0f) - 1.0f);
-  slideVibratoPhaseIndex = frequencyDeviation /
-      (2.0f * PI * slideVibratoRate);
-  adjustSlideFilters();
+  float frequencyDeviation = whistleOsc.getFreq() *
+      (powf(2.0f, whistleVibratoIndex / 12.0f) - 1.0f);
+  whistleVibratoPhaseIndex = frequencyDeviation /
+      (2.0f * PI * whistleVibratoRate);
+  adjustwhistleFilters();
 }
 
-void setSlidePitch(float pitch) {
-  slidePitch = pitch;
-  slideTargetPitch = pitch;
+void setWhistlePitch(float pitch) {
+  whistlePitch = pitch;
+  whistleTargetPitch = pitch;
 }
 
-void triggerSlideWhistle() {
+void triggerWhistle() {
   // Dial movement is continuous while a note sounds. At the next attack,
   // capture an in-key base and quantize the randomized note to C major too.
-  slidePitch = quantizeToCMajor(slidePitch);
-  slideTargetPitch = quantizeToCMajor(
-      slidePitch + randomPentatonicOffset());
-  slideToneEnv.start();
-  slideNoiseEnv.start();
+  whistlePitch = quantizeToCMajor(whistlePitch);
+  whistleTargetPitch = quantizeToCMajor(whistlePitch + randomPentatonicOffset());
+  whistleToneEnv.start();
+  whistleNoiseEnv.start();
 }
 
-void releaseSlideWhistle() {
-  slideToneEnv.startRelease();
-  slideNoiseEnv.startRelease();
+void releaseWhistle() {
+  whistleToneEnv.startRelease();
+  whistleNoiseEnv.startRelease();
 }
 
 // -------------------------------------------------------------------------
@@ -224,8 +223,8 @@ void releaseGlockenspiel() {
 void setInstrumentMaxLevel(uint8_t instrument, float level) {
   level = max(0.0f, min(1.0f, level));
   if (instrument == 0) {
-    slideToneEnv.setMaxLevel(level);
-    slideNoiseEnv.setMaxLevel(level * 0.25f);
+    whistleToneEnv.setMaxLevel(level);
+    whistleNoiseEnv.setMaxLevel(level * 0.25f);
   } else if (instrument == 1) {
     kalimbaEnv.setMaxLevel(level);
   } else if (instrument == 2) {
@@ -236,29 +235,29 @@ void setInstrumentMaxLevel(uint8_t instrument, float level) {
 }
 
 // -------------------------------------------------------------------------
-void initSlideWhistle() {
-  slideOsc.sawGen();
-  slideOsc.disableAntiAlias(); // not necessary for LFO
-  slideNoise.pinkNoiseGen();
-  slideNoise.setNoise(true);
-  slideVibratoLfo.sinGen();
-  slideVibratoLfo.setFreq(slideVibratoRate);
+void initWhistle() {
+  whistleOsc.sawGen();
+  whistleOsc.disableAntiAlias(); // not necessary for LFO
+  whistleNoise.pinkNoiseGen();
+  whistleNoise.setNoise(true);
+  whistleVibratoLfo.sinGen();
+  whistleVibratoLfo.setFreq(whistleVibratoRate);
 
-  setSlidePlayingPitch(slidePitch - 0.5f);
-  slideLowPass.setFreq(900.0f);
-  slideHighPass.setFreq(200.0f);
-  slideNoiseBandPass.setFreq(mtof(slidePitch));
+  setwhistlePlayingPitch(whistlePitch - 0.5f);
+  whistleLowPass.setFreq(900.0f);
+  whistleHighPass.setFreq(200.0f);
+  whistleNoiseBandPass.setFreq(mtof(whistlePitch));
 
-  slideToneEnv.setAttack(300);
-  slideToneEnv.setDecay(500);
-  slideToneEnv.setSustain(0.9f);
-  slideToneEnv.setRelease(300);
+  whistleToneEnv.setAttack(300);
+  whistleToneEnv.setDecay(500);
+  whistleToneEnv.setSustain(0.9f);
+  whistleToneEnv.setRelease(300);
 
-  slideNoiseEnv.setAttack(50);
-  slideNoiseEnv.setDecay(500);
-  slideNoiseEnv.setSustain(0.5f);
-  slideNoiseEnv.setRelease(150);
-  slideNoiseEnv.setMaxLevel(0.25f);
+  whistleNoiseEnv.setAttack(50);
+  whistleNoiseEnv.setDecay(500);
+  whistleNoiseEnv.setSustain(0.5f);
+  whistleNoiseEnv.setRelease(150);
+  whistleNoiseEnv.setMaxLevel(0.25f);
 }
 
 void initKalimba() {
@@ -327,7 +326,7 @@ void setup() {
     Serial.println((int)esp_reset_reason());
   #endif
 
-  initSlideWhistle();
+  initWhistle();
   initKalimba();
   initSpring();
   initGlockenspiel();
@@ -364,13 +363,13 @@ void loop() {
     readMidi();
   }
 
-  if ((unsigned long)(now - slidePitchTime) >= 4) {
-    slidePitchTime = now;
-    if (slideToneEnv.getValue() > 0) {
-      setSlidePlayingPitch(slew(slideOsc.getPitch(), slideTargetPitch, 0.5f));
+  if ((unsigned long)(now - whistlePitchTime) >= 4) {
+    whistlePitchTime = now;
+    if (whistleToneEnv.getValue() > 0) {
+      setwhistlePlayingPitch(slew(whistleOsc.getPitch(), whistleTargetPitch, 0.5f));
     } else {
-      // Begin each whistle note with its characteristic short upward slide.
-      setSlidePlayingPitch(slidePitch - 0.5f);
+      // Begin each whistle note with its characteristic short upward whistle.
+      setwhistlePlayingPitch(whistlePitch - 0.5f);
     }
   }
 }
@@ -378,14 +377,14 @@ void loop() {
 // -------------------------------------------------------------------------
 // Audio processing
 
-int32_t renderSlideWhistle() {
-  if (slideToneEnv.getEnvState() == 0 && slideNoiseEnv.getEnvState() == 0) {
+int32_t renderWhistle() {
+  if (whistleToneEnv.getEnvState() == 0 && whistleNoiseEnv.getEnvState() == 0) {
     return 0;
   }
-  int32_t tone = (slideOsc.phMod(slideVibratoLfo.next(), slideVibratoPhaseIndex) * slideToneEnv.next()) >> 16;
-  int32_t wind = slideNoiseBandPass.nextBPF(slideNoise.next());
-  wind = (wind * slideNoiseEnv.next()) >> 16;
-  return slideHighPass.nextHPF(slideLowPass.nextLPF(clip16(tone + wind)));
+  int32_t tone = (whistleOsc.phMod(whistleVibratoLfo.next(), whistleVibratoPhaseIndex) * whistleToneEnv.next()) >> 16;
+  int32_t wind = whistleNoiseBandPass.nextBPF(whistleNoise.next());
+  wind = (wind * whistleNoiseEnv.next()) >> 16;
+  return whistleHighPass.nextHPF(whistleLowPass.nextLPF(clip16(tone + wind)));
 }
 
 int32_t renderKalimba() {
@@ -441,7 +440,7 @@ void audioUpdate() {
   int32_t mix;
   if (audioPartitionOffset() == 0) {
     // Core 0 finalises the mix and runs BBD/reverb, so keep its instruments light.
-    mix = (renderSlideWhistle() >> 1) + (renderGlockenspiel() >> 2);
+    mix = (renderWhistle() >> 1) + (renderGlockenspiel() >> 2);
   } else {
     // Balance the physical-model voices against Core 0's shared effects.
     mix = renderKalimba() + renderSpring();

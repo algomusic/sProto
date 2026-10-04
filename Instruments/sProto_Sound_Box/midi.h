@@ -1,6 +1,6 @@
 /* MIDI notes:
 
-  - 60 triggers Pad 1 — slide whistle
+  - 60 triggers Pad 1 — tin whistle
   - 62 triggers Pad 2 — kalimba
   - 64 triggers Pad 3 — spring
   - 65 triggers Pad 4 — glockenspiel
@@ -48,14 +48,14 @@ void triggerMidiInstrument(uint8_t instrument, byte velocity) {
   // Velocity 1 is 30% level and velocity 127 is 100% level.
   const float velocityLevel = 0.3f + ((velocity - 1) * (0.7f / 126.0f));
   setInstrumentMaxLevel(instrument, velocityLevel);
-  if (instrument == 0) triggerSlideWhistle();
+  if (instrument == 0) triggerWhistle();
   if (instrument == 1) triggerKalimba();
   if (instrument == 2) triggerSpring();
   if (instrument == 3) triggerGlockenspiel();
 }
 
 void releaseMidiInstrument(uint8_t instrument) {
-  if (instrument == 0) releaseSlideWhistle();
+  if (instrument == 0) releaseWhistle();
   if (instrument == 1) releaseKalimba();
   if (instrument == 2) releaseSpring();
   if (instrument == 3) releaseGlockenspiel();
