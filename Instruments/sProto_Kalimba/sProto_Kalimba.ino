@@ -181,22 +181,21 @@ void loop() {
 // --- audio ---
 
 /* The audioUpdate function is required in all M16 programs. */
-
 void audioUpdate() {
-  int32_t mix = 0;
-
-  for (int voice = audioPartitionOffset(); voice < voiceCount; voice += audioPartitionStride()) {
-    int32_t source = noise[voice].nextUnlocked();
-    int32_t strike = ((int64_t)source * envelopes[voice].next()) >> 16;
-    int32_t dampenedStrike = exciterFilters[voice].nextLPFUnlocked(strike);
-
+  int32_t mix = 0; // reused varible for the combined output of all polyphonic voices
+  // polyphonic voices are distributed acrss the 2 cores of the ESP32
+  for (int voice = audioPartitionOffset(); voice < voiceCount; voice += audioPartitionStride()) { // for each voice
+    int32_t source = noise[voice].nextUnlocked(); // generate noise
+    int32_t strike = ((int64_t)source * envelopes[voice].next()) >> 16; // shape noise into an exciter impulse
+    int32_t dampenedStrike = exciterFilters[voice].nextLPFUnlocked(strike); // lowpass filter the noise
+    // pass exciter through three bandpass filters, then to three tuned Karplus Strong feedback delay lines
     int32_t mode1 = modes[voice][0].pluck(modeFilters[voice][0].nextBPFUnlocked(clip16(dampenedStrike)), feedback1);
     int32_t mode2 = modes[voice][1].pluck(modeFilters[voice][1].nextBPFUnlocked(clip16(dampenedStrike)), feedback2);
     int32_t mode3 = modes[voice][2].pluck(modeFilters[voice][2].nextBPFUnlocked(clip16(dampenedStrike)), feedback3);
-
+    // mix the components together, gain compensating to prevent clipping
     int32_t voiceMix = clip16(((dampenedStrike >> 1) + mode1 + (mode2 >> 1) + (mode3 >> 1)) >> 1);
     mix = clip16(mix + voiceMix);
   }
 
-  audioBlockWrite(mix, mix); // M16 combines both voice partitions first.
+  audioBlockWrite(mix, mix); // send to the DAC, same mono signal to each L & R channel.
 }

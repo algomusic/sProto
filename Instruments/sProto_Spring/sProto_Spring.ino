@@ -101,14 +101,14 @@ void loop() {
 
 // --- audio ---
 /* The audioUpdate function is required in all M16 programs. */
-int32_t delaySum;
+int32_t delaySum; // persitent variable holding the previous summed delay lines
 
 void audioUpdate() {
-  int32_t tone = noise.next();
-  int32_t filteredTone = noiseFilter.nextBPF(tone);
-  int32_t ampEnv = (filteredTone * env.next()) >> 16;
+  int32_t tone = noise.next(); // generate noise exciter
+  int32_t filteredTone = noiseFilter.nextBPF(tone); // bandpass filter the noise
+  int32_t ampEnv = (filteredTone * env.next()) >> 16; // shape the noise into an impulse
   int32_t feed = clip16(ampEnv + (delaySum >> 6)); // add some cross mod between delays
-  delaySum = clip16(delays[0].next(feed) + delays[1].next(feed) + delays[2].next(feed));
-  int32_t out = outputGain.next((ampEnv >> 1) + delaySum);
-  audioBlockWrite(out, out); // same signal to L & R
+  delaySum = clip16(delays[0].next(feed) + delays[1].next(feed) + delays[2].next(feed)); // sum three delay lines
+  int32_t out = outputGain.next((ampEnv >> 1) + delaySum); // mix the exciter and delays
+  audioBlockWrite(out, out); // send to DAC, same signal to L & R
 }

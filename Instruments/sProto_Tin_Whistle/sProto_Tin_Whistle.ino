@@ -145,18 +145,13 @@ void loop() {
 
 /* The audioUpdate function is required in all M16 programs. */
 void audioUpdate() {
-  int32_t tone = osc.phMod(slideVibratoLfo.next(), slideVibratoPhaseIndex);
+  int32_t tone = osc.phMod(slideVibratoLfo.next(), slideVibratoPhaseIndex); // tone with vibrato
   tone = (tone * toneAmpEnv.next()) >> 16; // apply amp env
-  // int32_t tone = (toneHPFilter.nextHPF(toneLPFilter.nextLPF(osc.next())) * toneAmpEnv.next()) >> 16; //toneHPFilter.nextHPF(toneLPFilter.nextLPF(osc.next()));
-  int32_t wind = noise.next();
-  wind = noiseBPFilter.nextBPF(wind); // filter
-  wind = (wind * noiseAmpEnv.next()) >> 16; // amp env
-  // int32_t wind = (noiseBPFilter.nextBPF(noise.next()) * noiseAmpEnv.next()) >> 16; 
-  int32_t out = clip16(tone + wind); // mix
-  out = toneHPFilter.nextHPF(toneLPFilter.nextLPF(out)); // filter
-  out = outputGain.next(out); // level
-  // audioBlockWrite(wind, wind);
-  // int32_t sample = (clip16(tone + wind) * toneAmpEnv.next()) >> 16;
-  // int32_t out = outputGain.next(clip16(tone + wind));
-  audioBlockWrite(out, out);
+  int32_t wind = noise.next(); // generate noise
+  wind = noiseBPFilter.nextBPF(wind); // bandpass filter the noise
+  wind = (wind * noiseAmpEnv.next()) >> 16; // amplitude envelope
+  int32_t out = clip16(tone + wind); // mix tone and noise
+  out = toneHPFilter.nextHPF(toneLPFilter.nextLPF(out)); // lowpass filter the mixed signal
+  out = outputGain.next(out); // volume level
+  audioBlockWrite(out, out); // send to DAC
 }

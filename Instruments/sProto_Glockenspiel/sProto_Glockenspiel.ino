@@ -117,10 +117,10 @@ void loop() {
 
 /* The audioUpdate function is required in all M16 programs. */
 void audioUpdate() {
-  int32_t modTone = modOsc.next();
-  int32_t modAmpEnv = (modTone * modEnv.next()) >> 16;
-  int32_t tone = carrierOsc.phMod(modAmpEnv, modIndex);
-  int32_t toneAmpEnv = (tone * carrierEnv.next()) >> 16;
-  int32_t out = outputGain.next(toneAmpEnv);
-  audioBlockWrite(out, out); // same signal to L & R
+  int32_t modTone = modOsc.next(); // generate modulator 
+  int32_t modAmpEnv = (modTone * modEnv.next()) >> 16; // shape modulator
+  int32_t tone = carrierOsc.phMod(modAmpEnv, modIndex); // generate modulated carrier
+  int32_t toneAmpEnv = (tone * carrierEnv.next()) >> 16; // shape the carrier
+  int32_t out = outputGain.next(toneAmpEnv); // volume
+  audioBlockWrite(out, out); // send to DAC, same signal to L & R
 }
