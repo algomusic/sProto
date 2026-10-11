@@ -1,0 +1,18 @@
+#include "M16.h"
+
+void setup() {
+  // put your setup code here, to run once:
+  seti2sPins(38, 39, 40, -1); // DAC connections: bck, ws, data_out, data_in
+  audioStart();
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  
+}
+
+void audioUpdate() {
+  int32_t sample = random(-32000, 32001); // noise
+  sample = sample * 0.25; // volume
+  audioBlockWrite(sample, sample);
+}
