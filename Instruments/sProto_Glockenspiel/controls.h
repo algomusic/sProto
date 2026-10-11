@@ -1,5 +1,9 @@
 #include "MultiControl.h"
 
+// Dial A - pitch
+// Dial B - mod index
+// Dial C - volume
+
 // hardware init
 const uint8_t padPins[4] = {1, 2, 3, 4}; // S3
 // const uint8_t padPins[4] = {13, 14, 15, 16}; // OG I2S
@@ -110,7 +114,7 @@ void readControls() {
     if (v >= 0) {
       switch (index) {
         case 0: updatePitch(map(v, 0, 1023, 48, 96)); break;
-        case 1: updateModIndex(floatMap(v, 0, 1023, 0.0f, 10.0f)); break;
+        case 1: updateModIndex(floatMap(v, 0, 1023, 0.0f, 5.0f)); break;
         case 2: updateVolume(map(v, 0, 1023, 0, 1024)); break;
       }
       midi.sendControlChange(0, CC_PITCH + index, map(v, 0, 1023, 0, 127));

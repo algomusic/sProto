@@ -3,8 +3,8 @@
 // For Arduino IDE:
 // - Select "ESP32-S3 Dev Module" as the board
 // - Select the appropriate Port
-// - Set, USB CDC on Boot: Enabled
-// - Set, PSRAM: OPI PSRAM
+// - Set, USB CDC on Boot: Enabled (for serial printouts)
+// - Set, PSRAM: OPI PSRAM (for maximising RAM usage)
 
 #include "M16.h"
 #include "Osc.h"
@@ -17,8 +17,8 @@ Env carrierEnv, modEnv;
 
 // Global variables
 WaveTable sineTable; // shared wavetable for both oscillators
-float modRatio = 1.73;
-float modIndex = 0.7;
+float modRatio = 1.73; // modulator/carrier frequency ratio
+float modIndex = 0.8;
 float basePitch = 84; // root pitch
 const int padIntervals[4] = {0, 2, 4, 7}; // unison, maj2, maj3, P5
 unsigned long controlTime, midiTime;
@@ -37,8 +37,7 @@ void setVoicePitch(float pitch) {
 // If a pad is held, retain its interval above the new root.
 void updatePitch(float pitch) {
   basePitch = pitch;
-  int interval = (activeTrigger >= 1 && activeTrigger <= 4)
-                   ? padIntervals[activeTrigger - 1] : 0;
+  int interval = (activeTrigger >= 1 && activeTrigger <= 4) ? padIntervals[activeTrigger - 1] : 0;
   setVoicePitch(basePitch + interval);
 }
 
@@ -79,13 +78,13 @@ void setup() {
   carrierOsc.setTable(sineTable); // assign wave to osc1
   modOsc.setTable(sineTable); // assign wave to osc2
   updatePitch(basePitch);
-  carrierEnv.setAttack(20);
-  carrierEnv.setDecay(800);
-  carrierEnv.setSustain(0.5);
-  carrierEnv.setRelease(3000);
+  carrierEnv.setAttack(10);
+  carrierEnv.setDecay(400);
+  carrierEnv.setSustain(0);
+  carrierEnv.setRelease(2000);
   modEnv.setAttack(0);
   modEnv.setDecay(200);
-  modEnv.setSustain(0.07);
+  modEnv.setSustain(0);
   modEnv.setRelease(1000);
   seti2sPins(38,39,40,41); // bck, ws, data_out, data_in // S3
   // seti2sPins(25, 26, 12, -1); // bck, ws, data_out, data_in // OG I2S
