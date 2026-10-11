@@ -1,5 +1,9 @@
 #include "MultiControl.h"
 
+// Dial A - pitch
+// Dial B - brightness
+// Dial c - volume
+
 // hardware init
 const uint8_t padPins[4] = {1, 2, 3, 4};
 MultiControl pads[4];

@@ -10,17 +10,18 @@
 #include "Osc.h"
 #include "Env.h"
 #include "Gain.h"
-#include "SVF2.h"
+// #include "SVF2.h"
+#include "SVF.h"
 #include "Phys.h"
 
 // Instantiate audio objects
-constexpr int voiceCount = 2;
+constexpr int voiceCount = 4; 
 constexpr int modeCount = 3;
 WaveTable noiseTable;
 Osc noise[voiceCount];
 Env envelopes[voiceCount];
-SVF2 exciterFilters[voiceCount];
-SVF2 modeFilters[voiceCount][modeCount];
+SVF exciterFilters[voiceCount];
+SVF modeFilters[voiceCount][modeCount];
 Phys modes[voiceCount][modeCount];
 
 // Global variables
@@ -37,9 +38,9 @@ unsigned long controlTime, midiTime;
 Gain outputGain;
 
 enum VoiceOwner : uint8_t { VOICE_FREE, VOICE_PAD, VOICE_MIDI, VOICE_BUTTON };
-VoiceOwner voiceOwner[voiceCount] = {VOICE_FREE, VOICE_FREE};
-int8_t voicePitch[voiceCount] = {-1, -1};
-int8_t voicePadIndex[voiceCount] = {-1, -1};
+VoiceOwner voiceOwner[voiceCount] = {VOICE_FREE, VOICE_FREE, VOICE_FREE, VOICE_FREE};
+int8_t voicePitch[voiceCount] = {-1, -1, -1, -1};
+int8_t voicePadIndex[voiceCount] = {-1, -1, -1, -1};
 uint8_t nextRoundRobinVoice = 0;
 int8_t padVoice[4] = {-1, -1, -1, -1};
 int8_t padLastPitch[4] = {-1, -1, -1, -1};
@@ -102,8 +103,7 @@ void updateExciterDampening(float cutoff) {
 }
 
 void updateVolume(int value) {
-  // outputGain.setLevel(value);
-  crossCoupling = value;
+  outputGain.setLevel(value);
   Serial.println("volume: " + String(value));
 }
 
@@ -154,7 +154,7 @@ void setup() {
   seti2sPins(38,39,40,41); // bck, ws, data_out, data_in 
   initTouchControls(); // Keep all pads untouched during startup calibration.
   setAudioPostProcessCallback(applyOutputGain);
-  // setIsDualCore(true); // Audio Core 0: voices 0/2; Arduino-loop Core 1: voice 1.
+  setIsDualCore(true); // Audio Core 0: voices 0/2; Arduino-loop Core 1: voice 1.
   audioStart();
 }
 
@@ -183,7 +183,7 @@ void loop() {
 /* The audioUpdate function is required in all M16 programs. */
 void audioUpdate() {
   int32_t mix = 0; // reused varible for the combined output of all polyphonic voices
-  // polyphonic voices are distributed acrss the 2 cores of the ESP32
+  // polyphonic voices are distributed across the 2 cores of the ESP32
   for (int voice = audioPartitionOffset(); voice < voiceCount; voice += audioPartitionStride()) { // for each voice
     int32_t source = noise[voice].nextUnlocked(); // generate noise
     int32_t strike = ((int64_t)source * envelopes[voice].next()) >> 16; // shape noise into an exciter impulse
@@ -193,8 +193,8 @@ void audioUpdate() {
     int32_t mode2 = modes[voice][1].pluck(modeFilters[voice][1].nextBPFUnlocked(clip16(dampenedStrike)), feedback2);
     int32_t mode3 = modes[voice][2].pluck(modeFilters[voice][2].nextBPFUnlocked(clip16(dampenedStrike)), feedback3);
     // mix the components together, gain compensating to prevent clipping
-    int32_t voiceMix = clip16(((dampenedStrike >> 1) + mode1 + (mode2 >> 1) + (mode3 >> 1)) >> 1);
-    mix = clip16(mix + voiceMix);
+    int32_t voiceMix = ((dampenedStrike >> 1) + mode1 + (mode2 >> 1) + (mode3 >> 1)) >> 1;
+    mix = clip16((mix + voiceMix) * 0.7f);
   }
 
   audioBlockWrite(mix, mix); // send to the DAC, same mono signal to each L & R channel.
