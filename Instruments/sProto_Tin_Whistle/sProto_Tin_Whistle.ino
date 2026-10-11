@@ -32,7 +32,10 @@ void adjustToneCutoff() {
   float keyTracking = 0.75;
   float cutoffRatio = 1.0;
   if (osc.getPitch() > 60) cutoffRatio = osc.getFreq() / 261.0f * keyTracking;
-  toneLPFilter.setFreq(baseToneCutoff * toneCutoffPressureScale * toneCutoffVelocityScale * cutoffRatio);
+  // Scale the dial's range above the 500 Hz floor so pressure/velocity cannot
+  // hold the filter at the floor and make dial movement appear ineffective.
+  float cutoff = 500.0f + (baseToneCutoff - 500.0f) * toneCutoffPressureScale * toneCutoffVelocityScale * cutoffRatio;
+  toneLPFilter.setFreq(cutoff);
 }
 
 void adjustNoiseCutoff() {
@@ -41,10 +44,8 @@ void adjustNoiseCutoff() {
 
 void setPlayingPitch(float pitch) {
   osc.setPitch(pitch);
-  const float frequencyDeviation = osc.getFreq()
-      * (powf(2.0f, slideVibratoIndex / 12.0f) - 1.0f);
-  slideVibratoPhaseIndex = frequencyDeviation
-      / (2.0f * PI * slideVibratoRate);
+  const float frequencyDeviation = osc.getFreq() * (powf(2.0f, slideVibratoIndex / 12.0f) - 1.0f);
+  slideVibratoPhaseIndex = frequencyDeviation / (2.0f * PI * slideVibratoRate);
   adjustToneCutoff();
   adjustNoiseCutoff();
 }
@@ -61,8 +62,7 @@ void triggerNotePitch(float pitch, float velocityScale = 1.0f) {
 // All live parameter changes, whether from a pot or MIDI, pass through these setters.
 void updatePitch(float pitch) {
   basePitch = pitch;
-  int interval = (activeTrigger >= 1 && activeTrigger <= 4)
-                   ? padIntervals[activeTrigger - 1] : 0;
+  int interval = (activeTrigger >= 1 && activeTrigger <= 4) ? padIntervals[activeTrigger - 1] : 0;
   targetPitch = basePitch + interval;
   pitchGlideActive = activeTrigger != -1;
 }

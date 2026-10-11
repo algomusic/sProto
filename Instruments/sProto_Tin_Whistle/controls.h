@@ -129,7 +129,9 @@ void readControls() {
   switch (index) {
     case 0: { int v = pot1.readPotChanged();
       if (v >= 0) {
-        updatePitch(floatMap(v, 0, 1023, 48, 84));
+        float pitch = floatMap(v, 0, 1023, 48, 84);
+        updatePitch(pitch);
+        Serial.print("Pitch "); Serial.println(pitch, 2);
         midi.sendControlChange(0, 8, map(v, 0, 1023, 0, 127));
       }
     } break;
@@ -137,16 +139,16 @@ void readControls() {
       if (v >= 0) {
         // updateRelease(floatMap(v, 0, 1023, 10.0f, 5000.0f));
         // Pitch tracking and touch pressure are applied by adjustToneCutoff().
-        baseToneCutoff = floatMap(v, 0, 1023, 300.0f, 6000.0f);
+        baseToneCutoff = floatMap(v, 0, 1023, 500.0f, 6000.0f);
         adjustToneCutoff();
+        Serial.print("Tone Cutoff "); Serial.println(baseToneCutoff);
         midi.sendControlChange(0, 9, map(v, 0, 1023, 0, 127));
       }
     } break;
     case 2: { int v = pot3.readPotChanged();
       if (v >= 0) {
-        updateVolume(map(v, 0, 1023, 0, 1024));
-        // noiseBPFilter.setRes(floatMap(v, 0, 1023, 0.0, 1.0));
-        // Serial.println("Noise resonance " + String(noiseBPFilter.getRes()));
+        updateVolume(v);
+        Serial.print("Volume "); Serial.println(v);
         midi.sendControlChange(0, 10, map(v, 0, 1023, 0, 127));
       }
     } break;
