@@ -19,17 +19,19 @@ const float slideVibratoIndex = 0.05f; // depth in semitones
 const float slideVibratoRate = 5.0f;   // Hz
 float slideVibratoPhaseIndex = 0.0f;
 float baseToneCutoff = 900;
+float toneCutoffPressureScale = 1.0f;
 const int padIntervals[4] = {0, 2, 4, 7}; // unison, maj2, maj3, P5
 unsigned long controlTime, midiTime, pitchTime;
 // int noiseLevel = 100; // 0 - 1024
 Gain outputGain;
 int activeTrigger = -1; // -1=none, 0=button, 1-4=pads, 5=MIDI
+bool pitchGlideActive = false;
 
 void adjustToneCutoff() {
   float keyTracking = 0.75;
   float cutoffRatio = 1.0;
   if (osc.getPitch() > 60) cutoffRatio = osc.getFreq() / 261.0f * keyTracking;
-  toneLPFilter.setFreq(baseToneCutoff * cutoffRatio);
+  toneLPFilter.setFreq(baseToneCutoff * toneCutoffPressureScale * cutoffRatio);
 }
 
 void adjustNoiseCutoff() {
@@ -46,13 +48,20 @@ void setPlayingPitch(float pitch) {
   adjustNoiseCutoff();
 }
 
+// Retarget an active note smoothly; start a fresh note at its pitch directly.
+void triggerNotePitch(float pitch) {
+  pitchGlideActive = activeTrigger != -1;
+  targetPitch = pitch;
+  if (!pitchGlideActive) setPlayingPitch(pitch);
+}
+
 // All live parameter changes, whether from a pot or MIDI, pass through these setters.
 void updatePitch(float pitch) {
   basePitch = pitch;
   int interval = (activeTrigger >= 1 && activeTrigger <= 4)
                    ? padIntervals[activeTrigger - 1] : 0;
   targetPitch = basePitch + interval;
-  // setPlayingPitch(basePitch + interval);
+  pitchGlideActive = activeTrigger != -1;
 }
 
 void updateRelease(float releaseMs) {
@@ -120,10 +129,16 @@ void loop() {
   // adjust pitch
   if ((unsigned long)(msNow - pitchTime) >= 4) {
     pitchTime = msNow;
-    if (toneAmpEnv.getValue() > 0) {
+    if (activeTrigger != -1 && pitchGlideActive) {
       float p = slew(osc.getPitch(), targetPitch, 0.5);
       setPlayingPitch(p);
-    } else setPlayingPitch(basePitch - 0.5); // force slide up into first note
+      if (p >= targetPitch - 0.01f && p <= targetPitch + 0.01f) {
+        setPlayingPitch(targetPitch);
+        pitchGlideActive = false;
+      }
+    } else if (toneAmpEnv.getValue() <= 0) {
+      setPlayingPitch(basePitch - 0.5f); // force slide up into first note
+    }
   }
 
   // check controls
