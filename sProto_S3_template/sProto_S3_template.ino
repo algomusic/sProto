@@ -37,8 +37,7 @@ void updateVolume(int value) {
 // If a pad is held, retain its interval above the new root.
 void updatePitch(float pitch) {
   basePitch = pitch;
-  int interval = (activeTrigger >= 1 && activeTrigger <= 4)
-                   ? padIntervals[activeTrigger - 1] : 0;
+  int interval = (activeTrigger >= 1 && activeTrigger <= 4) ? padIntervals[activeTrigger - 1] : 0;
   setVoicePitch(basePitch + interval);
 }
 
