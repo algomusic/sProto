@@ -1,6 +1,6 @@
 // sProto Slide Whistle - a monophonic recorder with pitch glide
 // for Arduino IDE.
-// - Select "ESP32-S3 Dev Module" as the board
+// - Select "ESP32-S3 Dev Module Octal (WROOM2)" as the board
 // - USB CDC on Boot: Enabled
 // - PSRAM: OPI PSRAM
 #include "M16.h"
@@ -20,6 +20,7 @@ const float slideVibratoRate = 5.0f;   // Hz
 float slideVibratoPhaseIndex = 0.0f;
 float baseToneCutoff = 900;
 float toneCutoffPressureScale = 1.0f;
+float toneCutoffVelocityScale = 1.0f;
 const int padIntervals[4] = {0, 2, 4, 7}; // unison, maj2, maj3, P5
 unsigned long controlTime, midiTime, pitchTime;
 // int noiseLevel = 100; // 0 - 1024
@@ -31,7 +32,7 @@ void adjustToneCutoff() {
   float keyTracking = 0.75;
   float cutoffRatio = 1.0;
   if (osc.getPitch() > 60) cutoffRatio = osc.getFreq() / 261.0f * keyTracking;
-  toneLPFilter.setFreq(baseToneCutoff * toneCutoffPressureScale * cutoffRatio);
+  toneLPFilter.setFreq(baseToneCutoff * toneCutoffPressureScale * toneCutoffVelocityScale * cutoffRatio);
 }
 
 void adjustNoiseCutoff() {
@@ -49,10 +50,12 @@ void setPlayingPitch(float pitch) {
 }
 
 // Retarget an active note smoothly; start a fresh note at its pitch directly.
-void triggerNotePitch(float pitch) {
+void triggerNotePitch(float pitch, float velocityScale = 1.0f) {
   pitchGlideActive = activeTrigger != -1;
+  toneCutoffVelocityScale = velocityScale;
   targetPitch = pitch;
   if (!pitchGlideActive) setPlayingPitch(pitch);
+  else adjustToneCutoff();
 }
 
 // All live parameter changes, whether from a pot or MIDI, pass through these setters.
