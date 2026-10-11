@@ -1,5 +1,11 @@
 #include "MultiControl.h"
 
+// Dial A - Multiple strikes
+// Dial B - Dampening
+// Dial C - Volume
+// Button - Single strike
+// Pads 1-4 - Single strike
+
 // hardware init
 const uint8_t padPins[4] = {1, 2, 3, 4};
 MultiControl pads[4];
