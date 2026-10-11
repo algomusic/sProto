@@ -1,5 +1,9 @@
 #include "MultiControl.h"
 
+// Dial A - pitch
+// Dial B - tone low-pass cutoff
+// Dial C - output volume
+
 // hardware init
 MultiControl pad1(1, 0); // play base pitch
 MultiControl pad2(2, 0); // play base + 2 semitones
@@ -31,10 +35,11 @@ int newestHeldPad() {
 void resumeHeldTouchPadOrRelease() {
   int selectedPad = newestHeldPad();
   if (selectedPad >= 0) {
-    targetPitch = basePitch + padIntervals[selectedPad];
+    triggerNotePitch(basePitch + padIntervals[selectedPad]);
     startEnvelopes();
     activeTrigger = selectedPad + 1;
   } else {
+    pitchGlideActive = false;
     releaseEnvelopes();
     activeTrigger = -1;
   }
@@ -56,8 +61,7 @@ void initTouchControls() {
 
 void handleButton(int value) {
   if (value == 0) {
-    targetPitch = basePitch;
-    // setPlayingPitch(basePitch);
+    triggerNotePitch(basePitch);
     startEnvelopes();
     activeTrigger = 0;
     Serial.println("Button pressed");
@@ -95,10 +99,11 @@ void readTouchControls() {
                            !padState[activeTrigger - 1];
   if (padPressed || activePadReleased) {
     if (selectedPad >= 0) {
-      targetPitch = basePitch + padIntervals[selectedPad];
+      triggerNotePitch(basePitch + padIntervals[selectedPad]);
       startEnvelopes();
       activeTrigger = selectedPad + 1;
     } else if (activePadReleased) {
+      pitchGlideActive = false;
       releaseEnvelopes();
       activeTrigger = -1;
     }
@@ -111,7 +116,7 @@ void readTouchControls() {
     int padIdx = activeTrigger - 1;
     int level = touchPads[padIdx]->getValue();
     toneAmpEnv.setMaxLevel(pow(level / 1024.0f, 2) * 0.3f + 0.7f);
-    baseToneCutoff = level / 1024.0f * 400 + 500;
+    toneCutoffPressureScale = (level / 1024.0f * 400.0f + 500.0f) / 900.0f;
     adjustToneCutoff();
     adjustNoiseCutoff();
   }
@@ -131,16 +136,17 @@ void readControls() {
     case 1: { int v = pot2.readPotChanged();
       if (v >= 0) {
         // updateRelease(floatMap(v, 0, 1023, 10.0f, 5000.0f));
-        toneLPFilter.setFreq(mtof(map(v, 0, 1023, 0, 127)));
+        // Pitch tracking and touch pressure are applied by adjustToneCutoff().
+        baseToneCutoff = floatMap(v, 0, 1023, 300.0f, 6000.0f);
+        adjustToneCutoff();
         midi.sendControlChange(0, 9, map(v, 0, 1023, 0, 127));
       }
     } break;
     case 2: { int v = pot3.readPotChanged();
       if (v >= 0) {
-        // updateVolume(map(v, 0, 1023, 0, 1024));
+        updateVolume(map(v, 0, 1023, 0, 1024));
         // noiseBPFilter.setRes(floatMap(v, 0, 1023, 0.0, 1.0));
         // Serial.println("Noise resonance " + String(noiseBPFilter.getRes()));
-        noiseAmpEnv.setMaxLevel(v/1023.0f);
         midi.sendControlChange(0, 10, map(v, 0, 1023, 0, 127));
       }
     } break;

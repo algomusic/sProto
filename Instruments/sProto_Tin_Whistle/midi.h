@@ -21,8 +21,7 @@ void handleMidiNoteOn(byte pitch, byte velocity) {
     toneAmpEnv.setMaxLevel(pow(velocity / 127.0f, 2) * 0.3f + 0.7f);
     baseToneCutoff = velocity / 127.0f * 400 + 500;
   }
-  targetPitch = pitch;
-  // setPlayingPitch(pitch);
+  triggerNotePitch(pitch);
   startEnvelopes();
   midiActiveNote = pitch;
   activeTrigger  = 5;
