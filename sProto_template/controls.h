@@ -1,5 +1,5 @@
 #include "MultiControl.h"
-
+// set up MC instances for each user interface element: GPIO pin, MC type
 MultiControl dial1(5, 1); MultiControl dial2(6, 1); // OG 32, 33 - S3 5, 6
 MultiControl dial3(7, 1); MultiControl button(8, 2); // OG 34, 27 - S3 7, 8
 MultiControl pad1(1, 0); MultiControl pad2(2, 0); // OG 12, 13 - S3 1, 2
@@ -31,7 +31,6 @@ void readTouchPads() {
     padActive[i] = padState[i];
     anyPadActive |= padState[i];
   }
-
   if (padGateActive && !anyPadActive) ampEnv1.startRelease();
   padGateActive = anyPadActive;
 }

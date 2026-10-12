@@ -1,8 +1,10 @@
 //. sProto PCB template using the M16 and MultiControl libraries
 // a simple mono synthesizer with pot control over pitch, filter cutoff, and volume
+// There are 3 files:
 // MultiControl user-interface code is in the controls.h file
 // MIDI code is in the midi.h file
 // Audio code is in this main file
+
 #include "M16.h"
 #include "Osc.h"
 #include "Bob.h"
@@ -10,9 +12,9 @@
 #include "Gain.h"
 
 Osc osc1; // declare an instance of the oscillator class
-Bob filter1;
-Env ampEnv1;
-Gain outputGain(250); // 0 = silent, 1024 = full level
+Bob filter1; // declare an instance of the Bob filter class
+Env ampEnv1; // declare an instance of the envelope class
+Gain outputGain(250); // a gain instance and inital value. 0 = silent, 1024 = full level
 
 #include "controls.h"
 #include "midi.h"
@@ -37,7 +39,7 @@ void loop() {
 void audioUpdate() {
   int32_t sample = osc1.next(); // get the next wavetable value
   sample = filter1.next(sample); // apply filter
-  sample = (ampEnv1.next() * sample) >> 16;
+  sample = (ampEnv1.next() * sample) >> 16; // apply envelope
   sample = outputGain.next(sample); // adjust the volume
-  audioBlockWrite(sample, sample);
+  audioBlockWrite(sample, sample); // send to the DAC
 }

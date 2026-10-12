@@ -34,8 +34,8 @@ void readMidi() {
   }
 }
 
-// use to send MIDI note messages, isOn true for note on, false for note off
-void sendMIDI(bool isOn, int chan, int midiPitch, int velocity) {
+// use to send MIDI note messages, pass isOn true for note on, or false for note off
+void sendMidiNote(bool isOn, int chan, int midiPitch, int velocity) {
   if (isOn) {
     midi.sendNoteOn(chan, midiPitch, velocity);
   } else midi.sendNoteOff(chan, midiPitch, 0);
