@@ -11,6 +11,6 @@ These GPIO pins are assigned to hardware on the sProto PCB:
 - MIDI: Input 42, Output 47
 - SD Card: CS 11, MOSI 12, CLK 13, MISO 14
 - LED: GPIO 48
-- I2C (not connected): SDA 18, SCL 21
+- I2C (not used): SDA 18, SCL 21
 
 All other GPIO pins are unassigned.
