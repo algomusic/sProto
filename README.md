@@ -7,7 +7,7 @@ These GPIO pins are assigned to hardware on the sProto PCB:
 - Touch pads 1-4: GPIO 1-4
 - Dials A-C: GPIO 5-7
 - Button: GPIO 8
-- Audio DAC: BCK 38, WS 39, DOUT 40, DIN 41
+- Audio DAC: BCK 38, WS 39, DOUT 40
 - MIDI: Input 42, Output 47
 - SD Card: CS 11, MOSI 12, CLK 13, MISO 14
 - LED: GPIO 48
