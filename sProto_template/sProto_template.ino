@@ -1,9 +1,9 @@
 //. sProto PCB template using the M16 and MultiControl libraries
 // a simple mono synthesizer with pot control over pitch, filter cutoff, and volume
 // There are 3 files:
+// Audio code is in this main file
 // MultiControl user-interface code is in the controls.h file
 // MIDI code is in the midi.h file
-// Audio code is in this main file
 
 #include "M16.h"
 #include "Osc.h"
@@ -23,8 +23,8 @@ void setup() {
   Serial.begin(115200);
   osc1.sawGen(); // initialise the osc's wavetable with a sawtooth waveform
   osc1.setPitch(69); // MIDI pitch, A4, 440 Hz
-  filter1.setFreq(900); // filter cutoff, 900 Hz
-  // ampEnv1.setSustain(0.5); // add sustain, set the envelopes' sustain level
+  filter1.setFreq(2000); // filter cutoff, 900 Hz
+  ampEnv1.setSustain(0.5); // add sustain, set the envelopes' sustain level
   seti2sPins(38, 39, 40, -1); // DAC connections for sProto S3: bck, ws, data_out, data_in
   // useInternalDAC(); // For sProto with original ESP32 dev kit
   audioStart();
