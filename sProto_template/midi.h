@@ -1,30 +1,18 @@
+// Use M16's MIDI16 class to read and send MIDI messages.
+
 #include "MIDI16.h"
 
 // GPIO 42 = RX, 47 = TX — Serial2 defaults for sProto with ESP32 S3 dev board
 // Use 16, 17 for sProto with original ESP32 dev board
 MIDI16 midi(42, 47);
 
-// MIDI thru is disabled by default. Select MIDI_THRU_ALL_DATA to forward every
-// channel message, or MIDI_THRU_UNUSED_DATA to forward messages this synth does
-// not handle. MIDI channels are zero-based (0 = MIDI channel 1).
+// MIDI thru is disabled by default. ALL_DATA forwards every received byte;
+// UNUSED_DATA forwards channel messages this synth does not handle. Realtime
+// messages always pass through. MIDI channels are zero-based (0 = channel 1).
 enum MidiThruMode : uint8_t { MIDI_THRU_ALL_DATA, MIDI_THRU_UNUSED_DATA };
 bool midiThruEnabled = false;
 MidiThruMode midiThruMode = MIDI_THRU_UNUSED_DATA;
 uint8_t synthMidiChannel = 0;
-
-void forwardMidiMessage(uint8_t status, uint8_t data1, uint8_t data2) {
-  // Realtime messages are single-byte messages and must always pass through.
-  if (status >= 0xF8) {
-    midi.writeByte(status);
-    return;
-  }
-  // MIDI16 currently exposes complete channel messages through read().
-  midi.writeByte(status);
-  midi.writeByte(data1);
-  uint8_t type = status & 0xF0;
-  if (type != MIDI16::programChange && type != MIDI16::channelAfterTouch)
-    midi.writeByte(data2);
-}
 
 void handleMidiNoteOff(byte pitch) {
   ampEnv1.startRelease();
@@ -48,6 +36,10 @@ void handleMidiCC(byte cc, byte value) {
 }
 
 void readMidi() {
+  // MIDI16's byte-level thru also forwards SysEx and System Common messages.
+  // Unused-data filtering still requires forwarding individual received events.
+  const bool allDataThru = midiThruEnabled && midiThruMode == MIDI_THRU_ALL_DATA;
+  midi.setMidiThru(allDataThru);
   uint8_t status;
   while ((status = midi.read()) != 0) {
     uint8_t data1 = midi.getData1();
@@ -56,7 +48,7 @@ void readMidi() {
     bool handled = false;
 
     if (status >= 0xF8) {
-      forwardMidiMessage(status, data1, data2);
+      if (!allDataThru) midi.forwardReceivedMessage();
       continue;
     }
 
@@ -76,10 +68,9 @@ void readMidi() {
       }
     }
 
-    bool shouldForward = midiThruEnabled && (midiThruMode == MIDI_THRU_ALL_DATA || !handled);
+    bool shouldForward = midiThruEnabled && midiThruMode == MIDI_THRU_UNUSED_DATA && !handled;
     if (shouldForward) {
-      uint8_t fullStatus = (status < 0xF0) ? (status | channel) : status;
-      forwardMidiMessage(fullStatus, data1, data2);
+      midi.forwardReceivedMessage();
     }
   }
 }
