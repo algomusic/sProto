@@ -6,12 +6,7 @@
 // Use 16, 17 for sProto with original ESP32 dev board
 MIDI16 midi(42, 47);
 
-// MIDI thru is disabled by default. ALL_DATA forwards every received byte;
-// UNUSED_DATA forwards channel messages this synth does not handle. Realtime
-// messages always pass through. MIDI channels are zero-based (0 = channel 1).
-enum MidiThruMode : uint8_t { MIDI_THRU_ALL_DATA, MIDI_THRU_UNUSED_DATA };
-bool midiThruEnabled = false;
-MidiThruMode midiThruMode = MIDI_THRU_UNUSED_DATA;
+// The thru mode is selected in setup(). MIDI channels are zero-based.
 uint8_t synthMidiChannel = 0;
 
 void handleMidiNoteOff(byte pitch) {
@@ -36,10 +31,6 @@ void handleMidiCC(byte cc, byte value) {
 }
 
 void readMidi() {
-  // MIDI16's byte-level thru also forwards SysEx and System Common messages.
-  // Unused-data filtering still requires forwarding individual received events.
-  const bool allDataThru = midiThruEnabled && midiThruMode == MIDI_THRU_ALL_DATA;
-  midi.setMidiThru(allDataThru);
   uint8_t status;
   while ((status = midi.read()) != 0) {
     uint8_t data1 = midi.getData1();
@@ -48,7 +39,6 @@ void readMidi() {
     bool handled = false;
 
     if (status >= 0xF8) {
-      if (!allDataThru) midi.forwardReceivedMessage();
       continue;
     }
 
@@ -68,10 +58,7 @@ void readMidi() {
       }
     }
 
-    bool shouldForward = midiThruEnabled && midiThruMode == MIDI_THRU_UNUSED_DATA && !handled;
-    if (shouldForward) {
-      midi.forwardReceivedMessage();
-    }
+    if (!handled) midi.forwardUnhandledMessage();
   }
 }
 

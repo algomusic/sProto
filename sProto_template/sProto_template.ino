@@ -21,6 +21,7 @@ Gain outputGain(250); // a gain instance and inital value. 0 = silent, 1024 = fu
 
 void setup() {
   Serial.begin(115200);
+  midi.setMidiThruMode(MIDI16::MIDI_THRU_NO_DATA); // Realtime still passes through.
   osc1.sawGen(); // initialise the osc's wavetable with a sawtooth waveform
   osc1.setPitch(69); // MIDI pitch, A4, 440 Hz
   filter1.setFreq(2000); // filter cutoff, 900 Hz
