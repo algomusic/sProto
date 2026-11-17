@@ -6,8 +6,8 @@
 // Use 16, 17 for sProto with original ESP32 dev board
 MIDI16 midi(42, 47);
 
-// The thru mode is selected in setup(). MIDI channels are zero-based.
-uint8_t synthMidiChannel = 0;
+// MIDI channel to respond to (1-16, using the numbers printed on devices).
+int8_t midiChannel = 1;
 
 void handleMidiNoteOff(byte pitch) {
   ampEnv1.startRelease();
@@ -31,6 +31,10 @@ void handleMidiCC(byte cc, byte value) {
 }
 
 void readMidi() {
+  int selectedChannel = midiChannel;
+  if (selectedChannel < 1) selectedChannel = 1;
+  if (selectedChannel > 16) selectedChannel = 16;
+  const uint8_t selectedChannelIndex = (uint8_t)(selectedChannel - 1);
   uint8_t status;
   while ((status = midi.read()) != 0) {
     uint8_t data1 = midi.getData1();
@@ -42,7 +46,7 @@ void readMidi() {
       continue;
     }
 
-    if (channel == synthMidiChannel) {
+    if (channel == selectedChannelIndex) {
       if (status == MIDI16::noteOn) {
         handleMidiNoteOn(data1, data2);
         handled = true;
