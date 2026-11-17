@@ -31,8 +31,8 @@ void initTouchControls() {
   pots[0].setBankValue(0, 512);                         // root pitch: C4
   pots[1].setBankValue(0, 767);                         // sawtooth
   pots[2].setBankValue(0, (int)(baseFilterCutoff * 1023.0f + 0.5f));
-  pots[0].setBankValue(1, 512);                         // filter envelope shape
-  pots[1].setBankValue(1, 512);                         // amplitude envelope shape
+  pots[0].setBankValue(1, 512);                         // amplitude envelope shape
+  pots[1].setBankValue(1, 512);                         // filter envelope shape
   pots[2].setBankValue(1, 0);                           // chorus depth
   for (int i = 0; i < 3; i++) pots[i].setBank(0);
 }
@@ -55,7 +55,7 @@ void readTouchControls() {
   for (int i = 0; i < 4; i++) {
     padState[i] = pads[i].isTouched();
     if (padState[i] && !prevPadState[i]) {
-      startVoice(basePitch + padIntervals[i], VOICE_PAD, i);
+      startVoice(basePitch + padIntervals[i], HARDWARE_SOURCE, i);
       sendPadNoteOn(i, basePitch + padIntervals[i]);
     } else if (!padState[i] && prevPadState[i]) {
       releasePadVoice(i);
@@ -80,9 +80,9 @@ void readControls() {
       switch (index) {
         case 0:
           if (pots[index].getBank() == 1) {
-            updateFilterEnvelopeMorph(v);
+            updateEnvelopeMorph(v);
             btn.notifyHoldAction();
-            midi.sendControlChange(0, CC_FILTER_ENV_SHAPE, map(v, 0, 1023, 0, 127));
+            midi.sendControlChange(0, CC_ENV_SHAPE, map(v, 0, 1023, 0, 127));
           } else {
             updatePitchFromDial(v);
             midi.sendControlChange(0, CC_PITCH, map(v, 0, 1023, 0, 127));
@@ -90,11 +90,11 @@ void readControls() {
           break;
         case 1:
           if (pots[index].getBank() == 1) {
-            updateEnvelopeMorph(v);
+            updateFilterEnvelopeMorph(v);
             btn.notifyHoldAction();
-            midi.sendControlChange(0, CC_ENV_SHAPE, map(v, 0, 1023, 0, 127));
+            midi.sendControlChange(0, CC_FILTER_ENV_SHAPE, map(v, 0, 1023, 0, 127));
           } else {
-            updateWaveMorph(v);
+            updateWaveformSelection(v);
             midi.sendControlChange(0, CC_MORPH, map(v, 0, 1023, 0, 127));
           }
           break;
