@@ -1,4 +1,5 @@
-// sProto Mono - a single-voice synthesizer with controls for pitch, oscillator balance, cutoff, envelope, and resonance.
+// sProto Mono - a two-scilator single-voice synthesizer with controls for
+// pitch, oscillator balance, cutoff, amplitude and filter envelopes, and resonance.
 // Inspired by the Novation Bass Station
 // Andrew R. Brown 2026
 // For Arduino IDE:
@@ -9,7 +10,7 @@
 //
 // Synth Controls:
 // A - Pitch, B - Oscillator Balance, C - Filter Cutoff
-// Button+A - Amplitude Envelope, Button+B - Filter Envelope, Button+C - Resonance
+// Button+A - Amplitude Envelope, Button+B - Filter Envelope, Button+C - Filter Resonance
 // Touch pads: 4 pitches from C major scale, pitch control jumps the base pitch to next C or G up or down
 
 #include "M16.h"
@@ -46,13 +47,15 @@ float velocityFilterMod = 0.4;
 volatile bool voiceHeld = false;
 float voicePitch = 60.0f;
 float targetPitch = 60.0f;
-float glideAmnt = 1.0; // 0.0 - 1.0
+float glideAmnt = 0.1; // 0.0 - 1.0
 unsigned long lfoStartTime = 0;
 float filterPitchScale = 1.0f;
 float filterVelocityScale = 1.0f;
 float smoothedFilterCutoff = 0.0f;
 float pitchBendSemitones = 0.0f;
 int8_t octave = -2;
+float overdriveLevel = 2.0f; // 1 - 3
+float distortionLevel = 1.5f; // 1 - 5
 
 float basePitch = 60; // middle C; Dial 1 selects C/G roots from MIDI 24-96
 const uint8_t rootPitches[] = {24, 31, 36, 43, 48, 55, 60, 67, 72, 79, 84, 91, 96};
@@ -72,7 +75,7 @@ const unsigned long pulseWidthUpdateInterval = 29;
 const float pulseWidthCentre = 0.475f;
 const float pulseWidthDeviation = 0.05f;
 const unsigned long pitchUpdateInterval = 7;
-volatile int subOscLevel = 512; // 0-1024
+volatile int subOscLevel = 800; // 0-1024
 const float envShape1[] = {5, 300, 0.0f, 300}; // ADSR
 const float envShape2[] = {20, 800, 0.3f, 500};
 const float envShape3[] = {50, 5000, 0.6f, 800};
@@ -89,7 +92,17 @@ void updateVibratoDepth(float semitones) {
 
 void updateGlideAmount(int value) {
   value = max(0, min(1023, value));
-  glideAmnt = value / 1023.0f;
+  glideAmnt = 1.0f - value / 1023.0f;
+}
+
+void updateOverdriveLevel(int value) {
+  value = max(0, min(1023, value));
+  overdriveLevel = map(value, 0, 1023, 10, 30) * 0.1f;
+}
+
+void updateDistortionLevel(int value) {
+  value = max(0, min(1023, value));
+  distortionLevel = map(value, 0, 1023, 10, 50) * 0.1f;
 }
 
 void applyVoicePitch(float vibratoSemitones = 0.0f) {
@@ -363,7 +376,7 @@ void loop() {
   if ((unsigned long)(msNow - pitchTime) >= pitchUpdateInterval) {
     pitchTime = msNow;
     if (voicePitch != targetPitch) {
-      voicePitch = slew(voicePitch, targetPitch, glideAmnt);
+      voicePitch = slew(voicePitch, targetPitch, 1.0f - glideAmnt);
       if (fabsf(targetPitch - voicePitch) < 0.001f) voicePitch = targetPitch; // close?
       applyVoicePitch();
     }
@@ -388,7 +401,9 @@ void audioUpdate() {
     const int32_t osc2Sample = osc2.nextUnlocked();
     int32_t tone = (osc1Sample * osc1Balance + osc2Sample * osc2Balance) / oscBalanceScale;
     tone += (subOsc.nextUnlocked() * subOscLevel) >> 10;
+    tone = effects.softClipTube(tone, overdriveLevel);
     tone = lowPassFilter.next(tone);
+    tone = effects.softClipAtan(tone, distortionLevel);
     const int32_t voiceOut = (tone * env.next()) >> 16;
     mix = voiceOut;
   }

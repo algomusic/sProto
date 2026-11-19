@@ -22,6 +22,8 @@ const byte CC_FILTER_ENV_SHAPE = 13;
 const byte CC_CHORUS_DEPTH = 14;
 const byte CC_SUB_OSC_LEVEL = 15;
 const byte CC_GLIDE_AMOUNT = 16;
+const byte CC_OVERDRIVE_LEVEL = 17;
+const byte CC_DISTORTION_LEVEL = 18;
 
 void initMidiInput() {
   midi.setMidiThruMode(midiThruMode);
@@ -75,6 +77,10 @@ void handleMidiCC(byte cc, byte value) {
       updateFilterResonance(potValue); syncPotBankValue(2, 1, potValue); break;
     case CC_GLIDE_AMOUNT:
       updateGlideAmount(potValue); break;
+    case CC_OVERDRIVE_LEVEL:
+      updateOverdriveLevel(potValue); break;
+    case CC_DISTORTION_LEVEL:
+      updateDistortionLevel(potValue); break;
   }
 }
 
@@ -97,7 +103,7 @@ void readMidi() {
             cc == CC_CUTOFF || cc == CC_ENV_SHAPE ||
             cc == CC_FILTER_ENV_SHAPE || cc == CC_CHORUS_DEPTH ||
             cc == CC_SUB_OSC_LEVEL || cc == CC_FILTER_RESONANCE ||
-            cc == CC_GLIDE_AMOUNT) {
+            cc == CC_GLIDE_AMOUNT || cc == CC_OVERDRIVE_LEVEL || cc == CC_DISTORTION_LEVEL) {
           handleMidiCC(cc, midi.getData2());
           handled = true;
         }
